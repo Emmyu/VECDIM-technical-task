@@ -1,0 +1,13 @@
+{
+  "name": "vecdim",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "backend"
+  ],
+  "scripts": {
+    "test": "npm run test -w @vecdim/validator && npm run test -w @vecdim/sync-core && npm run test -w @vecdim/backend",
+    "parity": "npm run parity -w @vecdim/validator"
+  }
+}

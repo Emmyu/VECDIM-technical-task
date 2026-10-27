@@ -1,0 +1,47 @@
+# One command starts everything:  docker compose up --build
+# Dashboard: http://localhost:3000/dashboard/    API: http://localhost:3000/api/v1/health
+# The first analysis run (R) starts by itself after the API is up and takes about a minute.
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: vecdim
+      POSTGRES_PASSWORD: vecdim
+      POSTGRES_DB: vecdim
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # -h forces TCP: during first-run init the entrypoint's temporary server listens on the socket only
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U vecdim -d vecdim"]
+      interval: 3s
+      timeout: 3s
+      retries: 90      # first start initialises PostGIS; allow slow machines up to 4.5 minutes
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # owner role: runs migrations and the seed (bypasses row-level security)
+      DATABASE_URL: postgres://vecdim:vecdim@db:5432/vecdim
+      # restricted role created by migration 002: the API uses this one, so row-level security applies
+      API_DATABASE_URL: postgres://vecdim_api:vecdim_api@db:5432/vecdim
+      # analysis pipeline: Rscript is in the image; results go to the database, files to the volume below
+      PIPELINE_SCHEDULE_MINUTES: "360"   # also run every 6 hours (0 = off); runs also follow syncs and enrichment
+      PIPELINE_DEBOUNCE_MS: "20000"      # after a sync, wait 20 s for more data before running
+    volumes:
+      - analysis:/data/analysis
+    ports:
+      - "${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  analysis:

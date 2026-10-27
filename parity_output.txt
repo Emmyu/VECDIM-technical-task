@@ -1,0 +1,26 @@
+Answer key: validation_flags_all.csv from the R pipeline (fresh run)
+
+== SERVER validator (11 rules): 1525 rows, reference date 2026-10-08 ==
+GPS_outside_nigeria    ours=  12  R=  12  differing rows=0
+GPS_zero_zero          ours=   8  R=   8  differing rows=0
+GPS_state_mismatch     ours=  30  R=  30  differing rows=0
+GPS_far_from_lga       ours=  30  R=  30  differing rows=0
+n_dead_gt_n_exposed    ours=  18  R=  18  differing rows=0
+positivity_out_range   ours=  10  R=  10  differing rows=0
+future_date            ours=  10  R=  10  differing rows=0
+temp_implausible       ours=   8  R=   8  differing rows=0
+rainfall_implausible   ours=   6  R=   6  differing rows=0
+duplicate              ours=  25  R=  25  differing rows=0
+missing_core           ours= 115  R= 115  differing rows=0
+RESULT SERVER validator (11 rules): PASS, every rule matches on every row
+
+== DEVICE validator (rules marked Device): 1525 rows, reference date 2026-10-08 ==
+GPS_outside_nigeria    ours=  12  R=  12  differing rows=0
+GPS_zero_zero          ours=   8  R=   8  differing rows=0
+GPS_state_mismatch     ours=  30  R=  30  differing rows=0
+GPS_far_from_lga       ours=  30  R=  30  differing rows=0
+n_dead_gt_n_exposed    ours=  18  R=  18  differing rows=0
+future_date            ours=  10  R=  10  differing rows=0
+duplicate              ours=  25  R=  25  differing rows=0
+missing_core           ours= 115  R= 115  differing rows=0
+RESULT DEVICE validator (rules marked Device): PASS, every rule matches on every row

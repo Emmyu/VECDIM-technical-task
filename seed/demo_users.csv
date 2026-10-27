@@ -1,0 +1,8 @@
+user_id,name,role,state
+u_field_01,Field worker 1 (Lagos),field,Lagos
+u_field_02,Field worker 2 (Kano),field,Kano
+u_field_03,Field worker 3 (Osun),field,Osun
+u_vecdim_lagos,VECDIM state user (Lagos),vecdim,Lagos
+u_vecdim_kano,VECDIM state user (Kano),vecdim,Kano
+u_vecdim_osun,VECDIM state user (Osun),vecdim,Osun
+u_uniosun_01,UNIOSUN national user,uniosun,

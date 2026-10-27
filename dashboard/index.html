@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VECDIM Dashboard</title>
+<meta name="theme-color" content="#0e4d33">
+<meta name="color-scheme" content="light">
+<style>
+  /* ---------- Design tokens: green and white ---------- */
+  :root {
+    --green-900: #0b3d2a; --green-800: #0e4d33; --green-700: #12663f; --green-600: #17804d; --green-500: #2a9d66;
+    --green-200: #cfe9da; --green-100: #e6f4ec; --green-50: #f3faf6;
+    --bg: #f3faf6; --surface: #ffffff; --text: #10261b; --muted: #587063; --border: #dbe8e0; --accent: var(--green-700);
+    --shadow: 0 1px 2px rgba(11, 61, 42, .06), 0 6px 18px rgba(11, 61, 42, .06);
+    --focus: 0 0 0 3px rgba(42, 157, 102, .35);
+    /* tiers keep their own colours so danger is never green */
+    --alert-bg: #fdecea; --alert-fg: #a52a22; --alert-bar: #d24a3f;
+    --warning-bg: #fff3d6; --warning-fg: #8a5800; --warning-bar: #e3a008;
+    --watch-bg: #e2f1f6; --watch-fg: #1f5f78; --watch-bar: #4a9bb8;
+    --res-bg: #efe8f8; --res-fg: #5b3a8a;
+    --ok-bg: var(--green-100); --ok-fg: #14683d;
+    --running-bg: #fff3d6; --running-fg: #8a5800;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* ---------- App bar ---------- */
+  .appbar { background: linear-gradient(135deg, var(--green-900), var(--green-700)); color: #fff; }
+  .appbar .in { max-width: 1160px; margin: 0 auto; padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 38px; height: 38px; flex: none; }
+  .brand .name { font-size: 20px; font-weight: 800; letter-spacing: .06em; line-height: 1.1; }
+  .brand .tag { font-size: 12px; opacity: .8; letter-spacing: .02em; }
+  .who { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .who label { color: rgba(255, 255, 255, .8); margin: 0 0 2px; }
+  .who select { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .35); min-width: 230px; }
+  .who select option { color: #10261b; background: #fff; }
+  #rolebadge { background: #fff; color: var(--green-800); }
+  #rolebadge:empty { display: none; }
+
+  /* ---------- Layout ---------- */
+  main { max-width: 1160px; margin: 0 auto; padding: 22px 20px 40px; }
+  footer { max-width: 1160px; margin: 0 auto; padding: 0 20px 28px; color: var(--muted); font-size: 12px; }
+  .pagehead { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
+  h2.title { font-size: 26px; line-height: 1.2; margin: 0; letter-spacing: -.01em; }
+  .pagehead .sub { margin: 4px 0 0; color: var(--muted); }
+  h2 { font-size: 16px; margin: 26px 0 8px; display: flex; align-items: center; gap: 8px; }
+  h2:not(.title)::before { content: ""; width: 4px; height: 16px; border-radius: 2px; background: var(--green-500); }
+  label { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted); display: block; margin-bottom: 3px; }
+  .muted { color: var(--muted); }
+  .note { font-size: 13px; color: var(--muted); margin: 6px 0 12px; }
+
+  /* ---------- Controls ---------- */
+  select, input, button { font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; min-height: 40px; }
+  select:focus-visible, input:focus-visible, button:focus-visible { outline: none; box-shadow: var(--focus); border-color: var(--green-500); }
+  button { cursor: pointer; font-weight: 600; background: var(--green-700); color: #fff; border-color: var(--green-700); transition: background .15s; }
+  button:hover:not(:disabled) { background: var(--green-600); }
+  button:disabled { opacity: .6; cursor: default; }
+  button.secondary { background: var(--surface); color: var(--green-700); border-color: var(--green-200); }
+  button.secondary:hover:not(:disabled) { background: var(--green-100); }
+  .filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 14px 0; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+
+  /* ---------- Tabs (segmented control) ---------- */
+  .tabs { display: inline-flex; gap: 4px; padding: 4px; margin: 4px 0 8px; background: var(--green-100); border-radius: 12px; max-width: 100%; overflow-x: auto; }
+  .tabs button { background: transparent; color: var(--green-800); border: 0; min-height: 36px; border-radius: 9px; padding: 6px 18px; }
+  .tabs button:hover { background: rgba(255, 255, 255, .6); }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--green-800); box-shadow: 0 1px 3px rgba(11, 61, 42, .18); }
+
+  /* ---------- Stat cards ---------- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 12px 0; }
+  .card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px 14px 20px; box-shadow: var(--shadow); overflow: hidden; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--green-200); }
+  .card .n { font-size: 32px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
+  .card .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .card.ALERT::before { background: var(--alert-bar); } .card.WARNING::before { background: var(--warning-bar); } .card.WATCH::before { background: var(--watch-bar); }
+  .card.attention::before { background: var(--alert-bar); } .card.ok::before { background: var(--green-500); }
+  .card.ALERT .n { color: var(--alert-fg); } .card.WARNING .n { color: var(--warning-fg); } .card.WATCH .n { color: var(--watch-fg); } .card.ok .n { color: var(--ok-fg); }
+
+  /* ---------- Tier bar ---------- */
+  .tierbox { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin: 12px 0; box-shadow: var(--shadow); }
+  .tierbar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--green-100); }
+  .tierbar .seg { display: block; height: 100%; }
+  .tierbar .seg + .seg { border-left: 2px solid var(--surface); }
+  .seg.ALERT { background: var(--alert-bar); } .seg.WARNING { background: var(--warning-bar); } .seg.WATCH { background: var(--watch-bar); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+  .legend b { color: var(--text); }
+
+  /* ---------- Tables ---------- */
+  .tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: var(--green-50); }
+  th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--green-800); background: var(--green-100); position: sticky; top: 0; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: var(--green-100); padding: 1px 6px; border-radius: 6px; }
+  .empty { background: var(--surface); border: 1px dashed var(--green-200); border-radius: 14px; padding: 28px 16px; text-align: center; color: var(--muted); }
+
+  /* ---------- Badges ---------- */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; background: var(--green-100); color: var(--green-800); }
+  .badge.ALERT { background: var(--alert-bg); color: var(--alert-fg); }
+  .badge.WARNING { background: var(--warning-bg); color: var(--warning-fg); }
+  .badge.WATCH { background: var(--watch-bg); color: var(--watch-fg); }
+  .badge.res { background: var(--res-bg); color: var(--res-fg); }
+  .badge.none { background: transparent; color: var(--muted); font-weight: 400; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok-fg); }
+  .badge.bad { background: var(--alert-bg); color: var(--alert-fg); }
+  .badge.flag { background: var(--warning-bg); color: var(--warning-fg); }
+  .err { margin: 2px 0; } .err b { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+  .banner { padding: 12px 14px; border-radius: 12px; background: var(--alert-bg); color: var(--alert-fg); margin: 12px 0; border: 1px solid var(--alert-bar); }
+  .status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; margin: 6px 0 12px; box-shadow: var(--shadow); }
+  .pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--green-500); }
+  .pulse.running { background: var(--warning-bar); animation: pulse 1.2s ease-in-out infinite; }
+  .pulse.failed { background: var(--alert-bar); }
+  @keyframes pulse { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .pulse.running { animation: none; } }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="in">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="#fff" fill-opacity=".14"/><path d="M24 8c-6.5 7-10 12.2-10 17.2a10 10 0 0 0 20 0C34 20.200 30.500 15 24 8z" fill="#fff"/><path d="M24 17v18M24 25l-6-5M24 29l6-5" stroke="#12663f" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
+      <div><div class="name">VECDIM</div><div class="tag">Vector surveillance &middot; Nigeria</div></div>
+    </div>
+    <div class="who">
+      <span id="rolebadge" class="badge ok"></span>
+      <div><label for="user">Viewing as (demo role switcher)</label><select id="user"></select></div>
+    </div>
+  </div>
+</header>
+<main id="main"><p class="muted">Loading…</p></main>
+<footer>VECDIM prototype &middot; synthetic data &middot; roles are for demonstration (a real login would replace the switcher)</footer>
+
+<script>
+const API = '/api/v1';
+let me = null;
+const $ = (s) => document.querySelector(s);
+
+// Small DOM helper; all text goes in through textContent, so record contents cannot inject markup.
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === 'class') el.className = v; else if (k.startsWith('on')) el.addEventListener(k.slice(2), v); else if (v !== false && v != null) el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return el;
+}
+
+const who = () => localStorage.getItem('vecdim_user') || '';
+async function api(path) {
+  const res = await fetch(API + path, { headers: { 'X-User-Id': who() } });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+  return res.json();
+}
+async function apiSend(method, path) {
+  const res = await fetch(API + path, { method, headers: { 'X-User-Id': who() } });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || res.statusText);
+  return body;
+}
+async function apiText(path) {
+  const res = await fetch(API + path, { headers: { 'X-User-Id': who() } });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+  return res.text();
+}
+// Minimal CSV reader for R's output files (quoted text, NA for missing)
+function parseCsv(text) {
+  const rows = text.trim().split(/\r?\n/).map((l) => (l.match(/("[^"]*"|[^,]+|(?<=,)(?=,))/g) || []).map((c) => c.replace(/^"|"$/g, '')));
+  const head = rows.shift();
+  return rows.map((r) => Object.fromEntries(head.map((k, i) => [k, r[i]])));
+}
+
+const tierBadge = (t) => h('span', { class: 'badge ' + t }, t);
+// The resistance flag is shown in its own column and never changes the tier colour.
+const resBadge = (f) => f ? h('span', { class: 'badge res' }, 'Pyrethroid resistance') : h('span', { class: 'badge none' }, '—');
+
+function table(columns, rows, emptyText) {
+  if (!rows.length) return h('div', { class: 'empty' }, emptyText || 'Nothing to show.');
+  return h('div', { class: 'tablewrap' }, h('table', {},
+    h('thead', {}, h('tr', {}, columns.map((c) => h('th', {}, c.title)))),
+    h('tbody', {}, rows.map((r) => h('tr', {}, columns.map((c) => h('td', {}, c.cell(r))))))));
+}
+
+function cards(items) {
+  return h('div', { class: 'cards' }, items.map((i) => h('div', { class: 'card ' + (i.cls || '') }, h('div', { class: 'n' }, i.n), h('div', { class: 'l' }, i.label))));
+}
+
+function pageHead(title, sub, right) {
+  return h('div', { class: 'pagehead' }, h('div', {}, h('h2', { class: 'title' }, title), sub ? h('p', { class: 'sub' }, sub) : null), right || null);
+}
+
+// One stacked bar showing how the LGA-months split across the three tiers
+function tierBar(counts) {
+  const tiers = ['ALERT', 'WARNING', 'WATCH'];
+  const total = tiers.reduce((a, t) => a + (counts[t] || 0), 0);
+  if (!total) return null;
+  return h('div', { class: 'tierbox' },
+    h('div', { class: 'tierbar', role: 'img', 'aria-label': tiers.map((t) => `${t} ${counts[t] || 0}`).join(', ') },
+      tiers.map((t) => (counts[t] ? h('span', { class: 'seg ' + t, style: `width:${(100 * counts[t]) / total}%`, title: `${t}: ${counts[t]}` }) : null))),
+    h('div', { class: 'legend' }, tiers.map((t) => h('span', {}, h('i', { class: 'seg ' + t }), t + ' ', h('b', {}, `${counts[t] || 0}`), ` (${Math.round((100 * (counts[t] || 0)) / total)}%)`))));
+}
+
+const fmtErrors = (errs) => (errs || []).map((e) => h('div', { class: 'err' }, h('b', {}, e.field), ': ', e.message));
+
+// ---------- Field view ----------
+async function fieldView() {
+  const [recs, attn] = await Promise.all([api('/records?limit=500'), api('/records/attention')]);
+  const flagged = recs.records.filter((r) => r.flags.length).length;
+  const main = h('div');
+  main.append(
+    cards([
+      { n: recs.total, label: 'Synced records', cls: 'ok' },
+      { n: flagged, label: 'Synced with a warning', cls: 'WARNING' },
+      { n: attn.records.length, label: 'Need attention (rejected)', cls: attn.records.length ? 'attention' : 'ok' },
+    ]),
+    h('h2', {}, 'Needs attention'),
+    h('p', { class: 'note' }, 'Rejected records stay on the phone. Open the app, change only the field named below, and tap Resubmit; the record keeps its ID.'),
+    table([
+      { title: 'Record ID', cell: (r) => h('code', {}, r.record_id) },
+      { title: 'Ward / date', cell: (r) => `${r.payload.ward ?? '?'} · ${r.payload.collection_date ?? '?'}` },
+      { title: 'Why it was rejected', cell: (r) => fmtErrors(r.errors) },
+      { title: 'Last attempt', cell: (r) => new Date(r.received_at).toLocaleString() },
+    ], attn.records, 'Nothing needs attention. Every record you sent was accepted.'),
+    h('h2', {}, 'My records'),
+    table([
+      { title: 'Date', cell: (r) => r.collection_date },
+      { title: 'Ward', cell: (r) => r.ward },
+      { title: 'Species', cell: (r) => r.species },
+      { title: 'Insecticide', cell: (r) => r.insecticide },
+      { title: 'Dead / exposed', cell: (r) => `${r.n_dead} / ${r.n_exposed} (${r.mortality_pct}%)` },
+      { title: 'Sync status', cell: (r) => r.flags.length
+          ? h('span', { class: 'badge flag', title: r.flags.map((f) => f.message).join('\n') }, 'Synced with flags: ' + r.flags.map((f) => f.rule).join(', '))
+          : h('span', { class: 'badge ok' }, 'Synced') },
+    ], recs.records.slice(0, 100), 'No records yet.'),
+    recs.total > 100 ? h('p', { class: 'note' }, `Showing 100 of ${recs.total}.`) : null,
+  );
+  return main;
+}
+
+// ---------- Alerts (VECDIM and UNIOSUN) ----------
+function alertsView(national) {
+  const wrap = h('div');
+  const f = { state: national ? '' : me.state, lga: '', from: '', to: '', tier: '', resistance: '', limit: 100 };
+  const body = h('div');
+
+  const field = (label, el) => h('div', {}, h('label', {}, label), el);
+  const sel = (key, opts) => { const s = h('select', { onchange: (e) => { f[key] = e.target.value; if (key === 'state') f.lga = ''; load(); } },
+    opts.map(([v, t]) => h('option', { value: v, ...(f[key] === v ? { selected: true } : {}) }, t))); return s; };
+  const LGAS = { Lagos: ['Ikorodu','Alimosho','Epe','Badagry','Eti-Osa'], Kano: ['Dala','Nasarawa','Gwale','Tarauni','Ungogo'], Osun: ['Osogbo','Ife Central','Ilesa East','Iwo','Ede North'] };
+
+  function controls() {
+    const st = f.state;
+    const lgas = st ? LGAS[st] : Object.values(LGAS).flat();
+    return h('div', { class: 'filters' },
+      national ? field('State', sel('state', [['', 'All states'], ...Object.keys(LGAS).map((s) => [s, s])])) : null,
+      field('LGA', sel('lga', [['', 'All LGAs'], ...lgas.map((l) => [l, l])])),
+      field('From month', h('input', { type: 'month', value: f.from, onchange: (e) => { f.from = e.target.value; load(); } })),
+      field('To month', h('input', { type: 'month', value: f.to, onchange: (e) => { f.to = e.target.value; load(); } })),
+      field('Tier', sel('tier', [['', 'All tiers'], ['ALERT', 'ALERT'], ['WARNING', 'WARNING'], ['WATCH', 'WATCH']])),
+      field('Resistance flag', sel('resistance', [['', 'Any'], ['true', 'Flagged'], ['false', 'Not flagged']])),
+      h('button', { class: 'secondary', onclick: () => { Object.assign(f, { lga: '', from: '', to: '', tier: '', resistance: '', state: national ? '' : me.state }); load(); } }, 'Clear filters'),
+    );
+  }
+
+  async function load() {
+    const qs = new URLSearchParams();
+    for (const k of ['state', 'lga', 'from', 'to', 'tier', 'resistance']) if (f[k]) qs.set(k, f[k]);
+    const [list, sum] = await Promise.all([api('/alerts?' + qs), api('/alerts/summary')]);
+    const filteredTotals = { ALERT: 0, WARNING: 0, WATCH: 0 };
+    list.alerts.forEach((a) => filteredTotals[a.tier]++);
+    const nothingYet = sum.totals.ALERT + sum.totals.WARNING + sum.totals.WATCH === 0;
+    body.replaceChildren(...[
+      h('h2', {}, national ? 'Tier counts, all states' : `Tier counts, ${me.state}`),
+      cards(['ALERT', 'WARNING', 'WATCH'].map((t) => ({ n: sum.totals[t], label: `${t} (LGA-months)`, cls: t }))),
+      tierBar(sum.totals),
+      national ? h('div', { class: 'tablewrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, ['State', 'ALERT', 'WARNING', 'WATCH', 'Resistance-flagged'].map((c) => h('th', {}, c)))),
+        h('tbody', {}, ['Kano', 'Lagos', 'Osun'].map((s) => {
+          const rows = sum.by_state.filter((r) => r.state === s);
+          const n = (t) => rows.find((r) => r.tier === t)?.n ?? 0;
+          return h('tr', {}, h('td', {}, h('b', {}, s)), h('td', {}, n('ALERT')), h('td', {}, n('WARNING')), h('td', {}, n('WATCH')), h('td', {}, rows.reduce((a, r) => a + r.resistance_flagged, 0)));
+        })))) : null,
+      h('p', { class: 'note' }, 'Tier comes from the model\'s mean risk (ALERT ≥ 0.70, WARNING 0.50–0.69, WATCH < 0.50). The pyrethroid-resistance flag is separate and never changes the tier.'),
+      h('h2', {}, 'Alerts by LGA and month'),
+      controls(),
+      h('p', { class: 'note' }, `${list.count} matching alert${list.count === 1 ? '' : 's'}` + (list.count !== sum.totals.ALERT + sum.totals.WARNING + sum.totals.WATCH ? ` (ALERT ${filteredTotals.ALERT}, WARNING ${filteredTotals.WARNING}, WATCH ${filteredTotals.WATCH})` : '')),
+      table([
+        { title: 'Month', cell: (a) => a.month },
+        { title: 'State', cell: (a) => a.state },
+        { title: 'LGA', cell: (a) => a.lga },
+        { title: 'Tier', cell: (a) => tierBadge(a.tier) },
+        { title: 'Mean risk', cell: (a) => a.mean_risk.toFixed(3) },
+        { title: 'Records', cell: (a) => a.n_records },
+        { title: 'Resistance flag', cell: (a) => resBadge(a.pyrethroid_resistance_flag) },
+      ], list.alerts.slice(0, f.limit), nothingYet
+        ? 'No alerts yet. The analysis runs by itself after the server starts (about a minute); check the Analysis tab.'
+        : 'No alerts match these filters.'),
+      list.count > f.limit ? h('p', {}, h('button', { class: 'secondary', onclick: () => { f.limit += 200; load(); } }, `Show more (${list.count - f.limit} left)`)) : null,
+    ].filter(Boolean));
+  }
+  wrap.append(body);
+  load().catch(showError);
+  return wrap;
+}
+
+async function recordsView() {
+  const recs = await api('/records?limit=200');
+  return h('div', {}, h('p', { class: 'note' }, `${recs.total} records in scope; showing the latest ${recs.records.length}.`),
+    table([
+      { title: 'Date', cell: (r) => r.collection_date }, { title: 'State', cell: (r) => r.state }, { title: 'LGA', cell: (r) => r.lga },
+      { title: 'Species', cell: (r) => r.species }, { title: 'Insecticide', cell: (r) => r.insecticide },
+      { title: 'Mortality', cell: (r) => r.mortality_pct + '%' }, { title: 'GPS acc.', cell: (r) => r.gps_accuracy_m == null ? '—' : r.gps_accuracy_m + ' m' },
+      { title: 'Source', cell: (r) => r.source },
+    ], recs.records, 'No records yet.'));
+}
+
+// ---------- Analysis (the R pipeline the backend runs) ----------
+const RULE_LABELS = {
+  GPS_outside_nigeria: 'GPS outside Nigeria', GPS_zero_zero: 'GPS is 0,0', GPS_state_mismatch: 'GPS outside the chosen state',
+  GPS_far_from_lga: 'GPS far from the chosen LGA', n_dead_gt_n_exposed: 'More dead than exposed', positivity_out_range: 'Slide positivity outside 0–100',
+  future_date: 'Collection date in the future', temp_implausible: 'Temperature implausible', rainfall_implausible: 'Rainfall implausible',
+  duplicate: 'Duplicate record', missing_core: 'Missing core covariate (awaiting enrichment)',
+};
+const when = (t) => (t ? new Date(t).toLocaleString() : '—');
+
+function analysisView(national) {
+  const wrap = h('div');
+  async function load() {
+    const [a, runs] = await Promise.all([api('/analysis/latest'), api('/analysis/runs')]);
+    const last = a.latest_run;
+    const ok = a.last_successful_run;
+    const state = a.running ? 'running' : !last ? 'none' : last.status === 'failed' ? 'failed' : 'ok';
+    const label = { running: 'Analysis running…', none: 'No analysis run yet', failed: 'Last run failed', ok: 'Analysis up to date' }[state];
+    const badge = { running: 'WARNING', none: 'WATCH', failed: 'ALERT', ok: 'ok' }[state];
+    const parts = [
+      h('div', { class: 'status' },
+        h('span', { class: 'pulse ' + (state === 'running' ? 'running' : state === 'failed' ? 'failed' : '') }),
+        h('span', { class: 'badge ' + badge }, label),
+        h('span', { class: 'muted' }, ok ? `Results from run #${ok.run_id}, ${when(ok.finished_at)} (${ok.trigger}) · ${ok.r_version || 'R'}` : 'No results yet.')),
+      last && last.status === 'failed' ? h('div', { class: 'banner' }, `Run #${last.run_id} failed: ${last.error}. The previous results are still shown.`) : null,
+      h('p', { class: 'note' }, `Showing ${a.scope}. The backend runs the R pipeline by itself after syncs and enrichment, on a timer, and at first start.`),
+      cards([
+        { n: a.counts.records_analysed, label: 'Records analysed (dataset + app)' },
+        { n: a.counts.flagged, label: 'Flagged by validation rules', cls: 'WARNING' },
+        { n: a.counts.clean, label: 'Clean records used for the model', cls: 'ok' },
+        { n: a.counts.app_records_awaiting_enrichment, label: `App records awaiting enrichment (of ${a.counts.app_records})`, cls: a.counts.app_records_awaiting_enrichment ? 'attention' : 'ok' },
+      ]),
+      cards(['ALERT', 'WARNING', 'WATCH'].map((t) => ({ n: a.counts.alerts[t], label: `${t} (LGA-months)`, cls: t }))),
+      tierBar(a.counts.alerts),
+      national ? h('p', {}, h('button', { disabled: a.running, onclick: async (e) => { e.target.disabled = true; try { await apiSend('POST', '/analysis/run'); } catch (x) { alert(x.message); } setTimeout(load, 1500); } }, a.running ? 'Running…' : 'Run analysis now')) : null,
+      h('h2', {}, 'Validation rules fired (R, per record; a record can fire several)'),
+      table([{ title: 'Rule', cell: (r) => RULE_LABELS[r[0]] || r[0] }, { title: 'Records', cell: (r) => r[1] }], Object.entries(a.rules)),
+      h('h2', {}, 'Recent runs'),
+      table([
+        { title: '#', cell: (r) => r.run_id }, { title: 'Started', cell: (r) => when(r.started_at) }, { title: 'Trigger', cell: (r) => r.trigger },
+        { title: 'Status', cell: (r) => h('span', { class: 'badge ' + (r.status === 'succeeded' ? 'ok' : r.status === 'failed' ? 'ALERT' : 'WARNING') }, r.status) },
+        { title: 'Seconds', cell: (r) => (r.duration_ms == null ? '—' : (r.duration_ms / 1000).toFixed(1)) }, { title: 'Reference date', cell: (r) => r.ref_date || '—' },
+      ], runs.runs, 'No runs yet.'),
+    ];
+    if (national) {
+      try {
+        const metrics = parseCsv(await apiText('/analysis/files/model_metrics.csv'));
+        parts.push(h('h2', {}, 'Model validation (AUC, 5-fold)'),
+          h('p', { class: 'note' }, 'Spatial (LGA-grouped) folds are the honest estimate for new places; adding latitude/longitude helps only when folds are random.'),
+          table([{ title: 'Setting', cell: (r) => r.setting }, { title: 'Mean AUC', cell: (r) => r.mean_auc }, { title: 'SD', cell: (r) => r.sd_auc }], metrics));
+      } catch { /* no results yet */ }
+    }
+    wrap.replaceChildren(...parts.filter(Boolean));
+    // while a run is in progress, look again every few seconds so "running" turns into "up to date" by itself
+    if (a.running) setTimeout(() => { if (wrap.isConnected) load().catch(() => {}); }, 4000);
+  }
+  load().catch(showError);
+  return wrap;
+}
+
+function showError(e) { $('#main').replaceChildren(h('div', { class: 'banner' }, e.message || String(e))); }
+
+async function render(tab) {
+  const main = $('#main');
+  main.replaceChildren(h('p', { class: 'muted' }, 'Loading…'));
+  try {
+    if (me.role === 'field') {
+      main.replaceChildren(pageHead(`Field view`, `${me.name} · your records and anything that needs fixing`), await fieldView());
+      return;
+    }
+    const national = me.role === 'uniosun';
+    const tabs = h('div', { class: 'tabs', role: 'tablist' },
+      ['Alerts', 'Records', 'Analysis'].map((t) => h('button', { role: 'tab', 'aria-selected': String(t === tab), onclick: () => render(t) }, t)));
+    main.replaceChildren(
+      pageHead(national ? 'UNIOSUN view' : 'VECDIM view', national ? 'National overview · Lagos, Kano and Osun' : `State overview · ${me.state}`),
+      tabs,
+      tab === 'Records' ? await recordsView() : tab === 'Analysis' ? analysisView(national) : alertsView(national));
+  } catch (e) { showError(e); }
+}
+
+async function start() {
+  const { users } = await fetch(API + '/users').then((r) => r.json());
+  const sel = $('#user');
+  let current = localStorage.getItem('vecdim_user');
+  if (!users.some((u) => u.user_id === current)) current = users.find((u) => u.role === 'uniosun')?.user_id || users[0].user_id;
+  localStorage.setItem('vecdim_user', current);
+  sel.replaceChildren(...users.map((u) => h('option', { value: u.user_id, ...(u.user_id === current ? { selected: true } : {}) }, `${u.name} [${u.role}]`)));
+  async function apply() {
+    me = await api('/me');
+    $('#rolebadge').textContent = me.role.toUpperCase() + (me.state ? ' · ' + me.state : '');
+    await render('Alerts');
+  }
+  sel.addEventListener('change', () => { localStorage.setItem('vecdim_user', sel.value); apply(); });
+  await apply();
+}
+start().catch(showError);
+</script>
+</body>
+</html>
