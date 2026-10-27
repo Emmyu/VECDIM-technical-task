@@ -192,4 +192,4 @@ UNIOSUN tier counts in one query: `SELECT tier, count(*) FROM alerts GROUP BY ti
 
 I used an AI coding assistant, a model from Anthropic, running in my editor. I want to be plain about how much it did: it wrote major part of the code, the tests, working from the brief and the candidate pack.
 
-My part was to give it the brief and the pack, agree the stack and the plan with it before any code was written, and decide what to change along the way (for example the dashboard's look, and testing on the Android emulator instead of a physical phone). I ran everything on my own machine (Docker, the emulator, the dashboard), reported what broke, and had it fix and retest.
+My part was to give it the brief and the pack, agree the stack and the plan with it before any code was written, and decide what to change along the way (for example the dashboard's look, and testing on an emulator  . I ran everything on my own machine (Docker, the emulator, the dashboard), reported what broke, and had it fix and retest.
